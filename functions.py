@@ -216,5 +216,5 @@ def compute_lift_summary(final_results, outcomes, hcp_cohort, group_channel_func
         .drop(columns=['segment_order', 'channel_order'])
     )
 
-    return final_sum2
+    return final_sum2, monthly_contribution
 
