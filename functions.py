@@ -68,11 +68,13 @@ def compute_segment_channel_impact(final_results, categorical_mapping_df, segmen
 
 import pandas as pd
 
+import pandas as pd
+
 def compute_lift_summary(final_results, outcomes, hcp_cohort, group_channel_func, 
                          segment_order=None):
     """
     Compute lift metrics (TTT, ATT, Contribution) for each treatment channel,
-    aggregated by target segment and test month.
+    aggregated by segment and test month.
 
     Parameters
     ----------
@@ -81,7 +83,7 @@ def compute_lift_summary(final_results, outcomes, hcp_cohort, group_channel_func
     outcomes : pd.DataFrame
         DataFrame containing outcome values with columns ['npi', 'ds', 'projected_value'].
     hcp_cohort : pd.DataFrame
-        DataFrame mapping NPIs to 'target_segment'.
+        DataFrame mapping NPIs to 'segment'.
     group_channel_func : callable
         Function that maps channel names to a higher-level group (e.g., BAE, DTC, Digital).
     segment_order : list, optional
@@ -91,7 +93,7 @@ def compute_lift_summary(final_results, outcomes, hcp_cohort, group_channel_func
     -------
     pd.DataFrame
         DataFrame with columns:
-        ['target_segment', 'test_month', 'channel', 'channel_group', 
+        ['segment', 'test_month', 'channel', 'channel_group', 
          'TTT', 'ATT', 'Contribution', 'projected_value']
     """
 
@@ -110,7 +112,7 @@ def compute_lift_summary(final_results, outcomes, hcp_cohort, group_channel_func
 
     # --- Group by segment and month ---
     group_stats = (
-        final_results.groupby(['target_segment', 'test_month'])[lift_cols]
+        final_results.groupby(['segment', 'test_month'])[lift_cols]
         .agg(['sum', 'mean'])
     )
     group_stats.columns = [f'{col[0]}_{col[1]}' for col in group_stats.columns]
@@ -123,15 +125,15 @@ def compute_lift_summary(final_results, outcomes, hcp_cohort, group_channel_func
     overall_stats.columns = [f'{col[0]}_{col[1]}' for col in overall_stats.columns]
     overall_stats = (
         overall_stats
-        .assign(target_segment='Overall')
-        .set_index('target_segment', append=True)
-        .reorder_levels(['target_segment', 'test_month'])
+        .assign(segment='Overall')
+        .set_index('segment', append=True)
+        .reorder_levels(['segment', 'test_month'])
     )
 
     # --- Combine segment-level and overall stats ---
     final_stats = pd.concat([group_stats, overall_stats]).sort_index(level=1)
 
-    # --- Order target segments ---
+    # --- Order segments ---
     if segment_order is not None:
         final_stats = final_stats.reindex(segment_order, level=0)
 
@@ -139,7 +141,7 @@ def compute_lift_summary(final_results, outcomes, hcp_cohort, group_channel_func
     final_stats_long = (
         final_stats.stack()
         .to_frame(name='impact')
-        .rename_axis(['target_segment', 'test_month', 'metric'])
+        .rename_axis(['segment', 'test_month', 'metric'])
         .reset_index()
     )
 
@@ -149,7 +151,7 @@ def compute_lift_summary(final_results, outcomes, hcp_cohort, group_channel_func
 
     # --- Pivot for sum and mean ---
     final_sum2 = final_stats_long.pivot_table(
-        index=['target_segment', 'test_month', 'channel'],
+        index=['segment', 'test_month', 'channel'],
         columns='stat',
         values='impact'
     ).reset_index()
@@ -159,10 +161,10 @@ def compute_lift_summary(final_results, outcomes, hcp_cohort, group_channel_func
 
     # --- Compute contribution ---
     monthly_contribution_a = outcomes.merge(
-        hcp_cohort[['npi', 'target_segment']], how='left', on='npi'
+        hcp_cohort[['npi', 'segment']], how='left', on='npi'
     )
     monthly_contribution_a = (
-        monthly_contribution_a.groupby(['target_segment', 'ds'])['projected_value']
+        monthly_contribution_a.groupby(['segment', 'ds'])['projected_value']
         .sum()
         .reset_index()
     )
@@ -171,7 +173,7 @@ def compute_lift_summary(final_results, outcomes, hcp_cohort, group_channel_func
         outcomes.groupby(['ds'])['projected_value']
         .sum()
         .reset_index()
-        .assign(target_segment='Overall')
+        .assign(segment='Overall')
     )
 
     monthly_contribution = pd.concat([monthly_contribution_a, monthly_contribution_b])
@@ -179,25 +181,25 @@ def compute_lift_summary(final_results, outcomes, hcp_cohort, group_channel_func
     final_sum2 = final_sum2.merge(
         monthly_contribution,
         how='left',
-        left_on=['target_segment', 'test_month'],
-        right_on=['target_segment', 'ds']
+        left_on=['segment', 'test_month'],
+        right_on=['segment', 'ds']
     )
 
     final_sum2['contribution'] = final_sum2['sum'] / final_sum2['projected_value']
 
     # --- Rename and reorder columns ---
     final_sum2 = final_sum2[
-        ['target_segment', 'test_month', 'channel', 'channel_group',
+        ['segment', 'test_month', 'channel', 'channel_group',
          'sum', 'mean', 'contribution', 'projected_value']
     ]
     final_sum2.columns = [
-        'target_segment', 'test_month', 'channel', 'channel_group',
+        'segment', 'test_month', 'channel', 'channel_group',
         'TTT', 'ATT', 'Contribution', 'projected_value'
     ]
 
     # --- Optional segment & channel sorting ---
     if segment_order is not None:
-        final_sum2['segment_order'] = final_sum2['target_segment'].map({
+        final_sum2['segment_order'] = final_sum2['segment'].map({
             seg: i for i, seg in enumerate(segment_order)
         })
     else:
@@ -215,3 +217,4 @@ def compute_lift_summary(final_results, outcomes, hcp_cohort, group_channel_func
     )
 
     return final_sum2
+
