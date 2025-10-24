@@ -66,10 +66,6 @@ def compute_segment_channel_impact(final_results, categorical_mapping_df, segmen
 
     return final_long
 
-import pandas as pd
-
-import pandas as pd
-
 def compute_lift_summary(final_results, outcomes, hcp_cohort, group_channel_func, 
                          segment_order=None):
     """
@@ -96,6 +92,14 @@ def compute_lift_summary(final_results, outcomes, hcp_cohort, group_channel_func
         ['segment', 'test_month', 'channel', 'channel_group', 
          'TTT', 'ATT', 'Contribution', 'projected_value']
     """
+
+    # --- Map segment values to names using categorical_mapping_df ---
+    segment_mapping = categorical_mapping_df[categorical_mapping_df['column'] == 'segment']
+    segment_map_dict = dict(zip(segment_mapping['encoded_value'], segment_mapping['original_value']))
+
+    # Create a copy to avoid modifying the original dataframe
+    final_results = final_results.copy()
+    final_results['segment'] = final_results['segment'].map(segment_map_dict)
 
     # --- Identify treatment channels ---
     treatcols = final_results.columns[final_results.columns.str.startswith('ITE_')]
@@ -185,36 +189,36 @@ def compute_lift_summary(final_results, outcomes, hcp_cohort, group_channel_func
         right_on=['segment', 'ds']
     )
 
-    # final_sum2['contribution'] = final_sum2['sum'] / final_sum2['projected_value']
+    final_sum2['contribution'] = final_sum2['sum'] / final_sum2['projected_value']
 
-    # # --- Rename and reorder columns ---
-    # final_sum2 = final_sum2[
-    #     ['segment', 'test_month', 'channel', 'channel_group',
-    #      'sum', 'mean', 'contribution', 'projected_value']
-    # ]
-    # final_sum2.columns = [
-    #     'segment', 'test_month', 'channel', 'channel_group',
-    #     'TTT', 'ATT', 'Contribution', 'projected_value'
-    # ]
+    # --- Rename and reorder columns ---
+    final_sum2 = final_sum2[
+        ['segment', 'test_month', 'channel', 'channel_group',
+         'sum', 'mean', 'contribution', 'projected_value']
+    ]
+    final_sum2.columns = [
+        'segment', 'test_month', 'channel', 'channel_group',
+        'TTT', 'ATT', 'Contribution', 'projected_value'
+    ]
 
-    # # --- Optional segment & channel sorting ---
-    # if segment_order is not None:
-    #     final_sum2['segment_order'] = final_sum2['segment'].map({
-    #         seg: i for i, seg in enumerate(segment_order)
-    #     })
-    # else:
-    #     final_sum2['segment_order'] = 0
+    # --- Optional segment & channel sorting ---
+    if segment_order is not None:
+        final_sum2['segment_order'] = final_sum2['segment'].map({
+            seg: i for i, seg in enumerate(segment_order)
+        })
+    else:
+        final_sum2['segment_order'] = 0
 
-    # final_sum2['channel_order'] = final_sum2['channel'].apply(
-    #     lambda x: '0' + x if x == 'BAE Detailing F2F' else '1' + x
-    # )
+    final_sum2['channel_order'] = final_sum2['channel'].apply(
+        lambda x: '0' + x if x == 'BAE Detailing F2F' else '1' + x
+    )
 
-    # final_sum2 = (
-    #     final_sum2
-    #     .sort_values(by=['test_month', 'segment_order', 'channel_order'])
-    #     .reset_index(drop=True)
-    #     .drop(columns=['segment_order', 'channel_order'])
-    # )
+    final_sum2 = (
+        final_sum2
+        .sort_values(by=['test_month', 'segment_order', 'channel_order'])
+        .reset_index(drop=True)
+        .drop(columns=['segment_order', 'channel_order'])
+    )
 
     return final_sum2, monthly_contribution
 
