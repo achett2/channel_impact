@@ -24,13 +24,13 @@ def compute_segment_channel_impact(final_results, categorical_mapping_df, segmen
         Long-format DataFrame with columns:
         ['segment', 'test_month', 'channel', 'impact', 'channel_group']
     """
-    # --- Map segment values to names using categorical_mapping_df ---
-    segment_mapping = categorical_mapping_df[categorical_mapping_df['column'] == 'segment']
-    segment_map_dict = dict(zip(segment_mapping['encoded_value'], segment_mapping['original_value']))
+    # # --- Map segment values to names using categorical_mapping_df ---
+    # segment_mapping = categorical_mapping_df[categorical_mapping_df['column'] == 'segment']
+    # segment_map_dict = dict(zip(segment_mapping['encoded_value'], segment_mapping['original_value']))
 
-    # Create a copy to avoid modifying the original dataframe
-    final_results = final_results.copy()
-    final_results['segment'] = final_results['segment'].map(segment_map_dict)
+    # # Create a copy to avoid modifying the original dataframe
+    # final_results = final_results.copy()
+    # final_results['segment'] = final_results['segment'].map(segment_map_dict)
 
     # --- Identify ITE columns ---
     ce_cols = final_results.filter(like='ITE_').columns
@@ -93,13 +93,13 @@ def compute_lift_summary(final_results, outcomes, hcp_cohort, group_channel_func
          'TTT', 'ATT', 'Contribution', 'projected_value']
     """
 
-    # --- Map segment values to names using categorical_mapping_df ---
-    segment_mapping = categorical_mapping_df[categorical_mapping_df['column'] == 'segment']
-    segment_map_dict = dict(zip(segment_mapping['encoded_value'], segment_mapping['original_value']))
+    # # --- Map segment values to names using categorical_mapping_df ---
+    # segment_mapping = categorical_mapping_df[categorical_mapping_df['column'] == 'segment']
+    # segment_map_dict = dict(zip(segment_mapping['encoded_value'], segment_mapping['original_value']))
 
-    # Create a copy to avoid modifying the original dataframe
-    final_results = final_results.copy()
-    final_results['segment'] = final_results['segment'].map(segment_map_dict)
+    # # Create a copy to avoid modifying the original dataframe
+    # final_results = final_results.copy()
+    # final_results['segment'] = final_results['segment'].map(segment_map_dict)
 
     # --- Identify treatment channels ---
     treatcols = final_results.columns[final_results.columns.str.startswith('ITE_')]
