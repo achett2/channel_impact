@@ -31,14 +31,27 @@ def generate_channel_response_curves(model_data, feature_colsm, treatments, trai
     """
     Fits causal models (CausalForestDML) per channel and returns causal + empirical response data.
     This version handles both 1D and 2D treatment/effect outputs safely.
+
+    Parameters:
+    -----------
+    npi_sample_size : int or None, default=10000
+        Number of NPIs to sample for computational efficiency.
+        Set to None to use all NPIs (no sampling).
     """
 
     all_responses = []
 
     # --- 1. Sample NPIs for computational efficiency ---
-    npi_sample = model_data['npi'].drop_duplicates().sample(n=npi_sample_size, random_state=42)
-    model_dataq = model_data[model_data['npi'].isin(npi_sample)]
-    model_data2 = model_dataq.copy()
+    if npi_sample_size is None:
+        # Use all NPIs
+        print("Using all NPIs (no sampling)")
+        model_data2 = model_data.copy()
+    else:
+        # Sample specified number of NPIs
+        print(f"Sampling {npi_sample_size} NPIs")
+        npi_sample = model_data['npi'].drop_duplicates().sample(n=npi_sample_size, random_state=42)
+        model_dataq = model_data[model_data['npi'].isin(npi_sample)]
+        model_data2 = model_dataq.copy()
 
     # --- 2. Split train/test periods ---
     train = model_data2[model_data2['ds'].isin(train_months)]
