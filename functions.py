@@ -22,7 +22,7 @@ def compute_segment_channel_impact(final_results, categorical_mapping_df, segmen
     -------
     pd.DataFrame
         Long-format DataFrame with columns:
-        ['segment', 'test_month', 'channel', 'impact', 'channel_group']
+        ['segment', 'test_month', 'channel', 'ATE', 'channel_group']
     """
     # # --- Map segment values to names using categorical_mapping_df ---
     # segment_mapping = categorical_mapping_df[categorical_mapping_df['column'] == 'segment']
@@ -56,10 +56,13 @@ def compute_segment_channel_impact(final_results, categorical_mapping_df, segmen
     # --- Convert to long format ---
     final_long = (
         final.stack()
-        .to_frame(name='impact')
+        .to_frame(name='ATE')
         .rename_axis(['segment', 'test_month', 'channel'])
         .reset_index()
     )
+
+    # --- Extract channel name from effect name (remove 'ITE_' prefix) ---
+    final_long['channel'] = final_long['channel'].str.replace('ITE_', '', regex=False)
 
     # --- Add channel group ---
     final_long['channel_group'] = final_long['channel'].apply(group_channel_func)
