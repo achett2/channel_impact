@@ -61,6 +61,9 @@ def compute_segment_channel_impact(final_results, categorical_mapping_df, segmen
         .reset_index()
     )
 
+    # --- Extract channel name from effect name (remove 'ITE_' prefix) ---
+    final_long['channel'] = final_long['channel'].str.replace('ITE_', '', regex=False)
+
     # --- Add channel group ---
     final_long['channel_group'] = final_long['channel'].apply(group_channel_func)
 
